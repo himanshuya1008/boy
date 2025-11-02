@@ -671,7 +671,12 @@
         <div class="quick-test-btns">
           <button class="quick-btn" onclick="quickTest('QR123')">QR123</button>
           <button class="quick-btn" onclick="quickTest('QR999')">QR999</button>
+          <button class="quick-btn" onclick="quickTest('MESS001')">MESS001</button>
+          <button class="quick-btn" onclick="quickTest('TEST123')">TEST123</button>
         </div>
+        <p style="color: #9ca3af; font-size: 13px; margin-top: 15px; text-align: center;">
+          ✨ Each QR code shows different student info!
+        </p>
       </div>
     </div>
   </div>
@@ -755,6 +760,27 @@
         mess: 'BS-02',
         program: 'P110: BBA (2022)',
         status: 'active'
+      },
+      MESS001: {
+        id: 'STU002',
+        name: 'Rahul Kumar',
+        mess: 'BS-05',
+        program: 'P145: B.Tech. (ECE)(2023)',
+        status: 'active'
+      },
+      MESS002: {
+        id: 'STU003',
+        name: 'Priya Singh',
+        mess: 'GS-01',
+        program: 'P156: BBA (Finance)(2024)',
+        status: 'active'
+      },
+      TEST123: {
+        id: 'STU004',
+        name: 'Amit Sharma',
+        mess: 'BS-08',
+        program: 'P132: B.Tech. (CSE)(2022)',
+        status: 'active'
       }
     };
     const usedCoupons = {};
@@ -762,17 +788,52 @@
     function verifyMealAccess(qrData, mealType) {
       return new Promise((resolve) => {
         setTimeout(() => {
-          const record = mockDatabase[qrData];
+          // Check if QR exists in database
+          let record = mockDatabase[qrData];
+          
+          // If not in database, generate info based on QR code
           if (!record) {
-            resolve({ success: false, reason: 'Invalid QR Code' });
-            return;
+            // Extract or generate student info from QR code
+            const hash = qrData.split('').reduce((a, b) => {
+              a = ((a << 5) - a) + b.charCodeAt(0);
+              return a & a;
+            }, 0);
+            
+            const studentNames = [
+              'Aarav Patel', 'Vivaan Singh', 'Aditya Kumar', 'Vihaan Sharma',
+              'Arjun Reddy', 'Sai Prasad', 'Reyansh Gupta', 'Ayaan Khan',
+              'Krishna Iyer', 'Ishaan Mehta', 'Shaurya Joshi', 'Atharv Rao',
+              'Advik Desai', 'Pranav Nair', 'Dhruv Malhotra', 'Kabir Agarwal'
+            ];
+            
+            const programs = [
+              'P132: B.Tech. (CSE)(2023)', 'P145: B.Tech. (ECE)(2023)',
+              'P110: BBA (2022)', 'P156: BBA (Finance)(2024)',
+              'P178: B.Tech. (Mechanical)(2023)', 'P189: B.Tech. (Civil)(2022)'
+            ];
+            
+            const messes = ['BS-10', 'BS-02', 'BS-05', 'BS-08', 'GS-01', 'GS-03'];
+            
+            const nameIndex = Math.abs(hash) % studentNames.length;
+            const progIndex = Math.abs(hash * 2) % programs.length;
+            const messIndex = Math.abs(hash * 3) % messes.length;
+            const stuNum = 1000 + (Math.abs(hash) % 9000);
+            
+            record = {
+              id: `STU${stuNum}`,
+              name: studentNames[nameIndex],
+              mess: messes[messIndex],
+              program: programs[progIndex],
+              status: 'active',
+              qrCode: qrData
+            };
           }
           
           const today = new Date().toDateString();
-          const couponKey = `${record.id}-${mealType}-${today}`;
+          const couponKey = `${qrData}-${mealType}-${today}`;
           
           if (usedCoupons[couponKey]) {
-            resolve({ success: false, reason: `${mealType} already availed today` });
+            resolve({ success: false, reason: `${mealType} already availed today for this QR code` });
           } else {
             usedCoupons[couponKey] = true;
             resolve({ success: true, data: record });
